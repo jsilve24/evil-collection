@@ -165,15 +165,15 @@
      "-" mu4e-headers-mark-for-unflag
      "[[" mu4e-headers-prev-unread
      "]]" mu4e-headers-next-unread
-     "gk" mu4e-headers-prev-unread
-     "gj" mu4e-headers-next-unread
+     ;; "gk" mu4e-headers-prev-unread
+     ;; "gj" mu4e-headers-next-unread
      "\C-j" mu4e-headers-next
      "\C-k" mu4e-headers-prev
      "zr" mu4e-headers-toggle-include-related
      "zt" mu4e-headers-toggle-threading
      "zd" mu4e-headers-toggle-skip-duplicates
-     "gl" mu4e-show-log
-     "gv" mu4e-select-other-view
+     ;; "gl" mu4e-show-log
+     "zv" mu4e-select-other-view
      "T" (lambda ()
            (interactive)
            (mu4e-headers-mark-thread nil '(read))))
@@ -211,8 +211,8 @@
      "J" mu4e~headers-jump-to-maildir
      "[[" mu4e-view-headers-prev-unread
      "]]" mu4e-view-headers-next-unread
-     "gk" mu4e-view-headers-prev-unread
-     "gj" mu4e-view-headers-next-unread
+     ;; "gk" mu4e-view-headers-prev-unread
+     ;; "gj" mu4e-view-headers-next-unread
      "\C-j" mu4e-view-headers-next
      "\C-k" mu4e-view-headers-prev
      "x" mu4e-view-marked-execute
@@ -233,7 +233,7 @@
      "zr" mu4e-headers-toggle-include-related
      "zt" mu4e-headers-toggle-threading
      "za" mu4e-view-toggle-hide-cited
-     "gl" mu4e-show-log
+     ;; "gl" mu4e-show-log
      "s" mu4e-view-search-edit
      "|" mu4e-view-pipe
      "." mu4e-view-raw-message
