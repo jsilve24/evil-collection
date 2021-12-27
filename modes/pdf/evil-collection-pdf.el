@@ -173,7 +173,7 @@
     "o" 'pdf-outline
 
     ;; quit
-    "q" 'quit-window
+    ;; "q" 'quit-window
     "Q" 'kill-this-buffer
     "ZQ" 'kill-this-buffer
     "ZZ" 'quit-window)
