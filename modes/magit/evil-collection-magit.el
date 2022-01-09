@@ -634,10 +634,12 @@ using `evil-collection-magit-toggle-text-mode'"
 (evil-collection-define-key 'normal
   'evil-collection-magit-toggle-text-minor-mode-map
   "\C-t" 'evil-collection-magit-toggle-text-mode
-  "\\"   'evil-collection-magit-toggle-text-mode)
+  ;; "\\"   'evil-collection-magit-toggle-text-mode
+  )
 (evil-collection-define-key evil-collection-magit-state 'magit-mode-map
   "\C-t" 'evil-collection-magit-toggle-text-mode
-  "\\"   'evil-collection-magit-toggle-text-mode)
+  ;; "\\"   'evil-collection-magit-toggle-text-mode
+  )
 
 (defvar evil-collection-magit-last-mode nil
   "Used to store last magit mode before entering text mode using
