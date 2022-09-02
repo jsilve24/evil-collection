@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, lispy, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -84,9 +84,11 @@ state."
 
 ;; -> `lispyville-insert-at-beginning-of-list'
 (evil-define-command evil-collection-lispy-insert-at-beginning-of-list (count)
-  "Enter `evil-collection-lispy-preferred-lispy-state' at the beginning of the current list.
-With COUNT, move backward/out COUNT lists first. This is the lispyville
-equivalent of `evil-cp-insert-at-beginning-of-form' except for lists only."
+  "Enter `evil-collection-lispy-preferred-lispy-state' at the start of the list.
+
+With COUNT, move backward/out COUNT lists first. This is the
+lispyville equivalent of `evil-cp-insert-at-beginning-of-form' except for lists
+only."
   (interactive "<c>")
   (when (lispy--out-backward (or count 1))
     (forward-char)
@@ -94,7 +96,7 @@ equivalent of `evil-cp-insert-at-beginning-of-form' except for lists only."
 
 ;; -> `lispyville-insert-at-end-of-list'
 (evil-define-command evil-collection-lispy-insert-at-end-of-list (count)
-  "Enter `lispyville-preferred-state' at the end of the current list.
+  "Enter `lispyville-preferred-state' at the end of the list.
 With COUNT, move forward/out COUNT lists first. This is the lispyville
 equivalent of `evil-cp-insert-at-end-of-form' except for lists only."
   (interactive "<c>")
@@ -455,6 +457,10 @@ Copy of `noc:lispy-delete'."
 
 (defvar evil-collection-lispy-mode-map-special
   (let ((map (make-sparse-keymap)))
+    (lispy-define-key map
+        ";" (evil-collection-lispy-action-then-next-sexp
+             'lispy-comment))
+
     ;; navigation
     (lispy-define-key map "l" 'lispy-right)
     (lispy-define-key map "h" 'lispy-left)
@@ -574,11 +580,11 @@ Copy of `noc:lispy-delete'."
 
 (defun evil-collection-lispy-set-key-theme (theme)
   "Set `lispy-mode-map' for according to THEME.
-THEME is a list of choices: 'special, 'lispy, 'paredit, 'evilcp,
-'c-digits', 'special-evil', 'evil'.
+THEME is a list of choices: \='special', \='lispy', \='paredit', \='evilcp',
+ \='c-digits', \='special-evil', \='evil'.
 
 This is an exact copy of `lispy-set-key-theme' except with the additions of
-'special-evil' and 'evil' themes."
+ \='special-evil' and \='evil' themes."
   (setq lispy-mode-map
         (make-composed-keymap
          (delq nil

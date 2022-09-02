@@ -6,7 +6,7 @@
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; James Nguyen <james@jojojames.com>
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
-;; Package-Requires: ((emacs "25.1") (evil "1.2.3") (magit "2.6.0"))
+;; Package-Requires: ((emacs "26.3") (evil "1.2.3") (magit "2.6.0"))
 ;; Homepage: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.4.1
 
@@ -54,15 +54,16 @@
 (defvar magit-status-mode-map)
 (defvar magit-submodule-list-mode-map)
 
-(defconst evil-collection-magit-maps '(evil-collection-magit-toggle-text-minor-mode-map
-                                       magit-blame-mode-map
-                                       magit-blame-read-only-mode-map
-                                       magit-blob-mode-map
-                                       magit-log-mode-map
-                                       magit-mode-map
-                                       magit-repolist-mode-map
-                                       magit-status-mode-map
-                                       magit-submodule-list-mode-map))
+(defconst evil-collection-magit-maps
+  '(evil-collection-magit-toggle-text-minor-mode-map
+    magit-log-mode-map ; -> parent: `magit-mode-map'
+    magit-status-mode-map ; -> parent: `magit-mode-map'
+    magit-blame-mode-map
+    magit-blame-read-only-mode-map
+    magit-blob-mode-map
+    magit-submodule-list-mode-map ; -> parent: `magit-repolist-mode-map'
+    magit-repolist-mode-map
+    magit-mode-map))
 
 (defcustom evil-collection-magit-use-y-for-yank t
   "When non nil (Default is t),
@@ -100,6 +101,20 @@ then put on \"C-l\"."
 When this option is enabled, the stash popup is available on \"Z\"."
   :group 'magit
   :type  'boolean)
+
+(defcustom evil-collection-magit-use-$-for-end-of-line t
+  "When non nil, use \"$\" for `evil-end-of-line'.
+
+Move `magit-process-buffer' to \"`\"."
+  :group 'magit
+  :type 'boolean)
+
+(defcustom evil-collection-magit-use-0-for-beginning-of-line t
+  "When non nil, use \"0\" for `evil-beginning-of-line'.
+
+Move `magit-diff-default-context' to \"~\"."
+  :group 'magit
+  :type 'boolean)
 
 (defcustom evil-collection-magit-state (if evil-collection-magit-use-y-for-yank 'normal 'motion)
   "State to use for most magit buffers."
@@ -213,9 +228,11 @@ When this option is enabled, the stash popup is available on \"Z\"."
     ;; new ones that I haven't looked at yet
     magit-button-section-map
     magit-commitbuf-section-map
+    magit-diff-section-map
     magit-diffbuf-section-map
     magit-diffstat-section-map
     magit-headers-section-map
+    magit-log-section-map
     magit-message-section-map
     ;; FIXME: deal with new bindings in this one
     magit-module-section-map
@@ -315,8 +332,7 @@ When this option is enabled, the stash popup is available on \"Z\"."
        (,states magit-mode-map ,(kbd "S-SPC") magit-diff-show-or-scroll-up   "SPC")
        (,states magit-mode-map ,(kbd "S-DEL") magit-diff-show-or-scroll-down "DEL")
 
-       ((,evil-collection-magit-state) magit-mode-map ,(kbd evil-toggle-key) evil-emacs-state)
-       ((,evil-collection-magit-state) magit-mode-map ,(kbd "<escape>") magit-mode-bury-buffer))
+       ((,evil-collection-magit-state) magit-mode-map ,(kbd evil-toggle-key) evil-emacs-state))
 
      (if (eq evil-search-module 'evil-search)
          `((,states magit-mode-map "/" evil-ex-search-forward)
@@ -354,7 +370,7 @@ When this option is enabled, the stash popup is available on \"Z\"."
          (,states magit-mode-map "l"    evil-forward-char)))
 
      (when evil-want-C-u-scroll
-       `((,states magit-mode-map "C-u" evil-scroll-up)))
+       `((,states magit-mode-map "\C-u" evil-scroll-up)))
 
      (if evil-collection-magit-use-y-for-yank
          `((,states magit-mode-map "v"    evil-visual-line)
@@ -369,6 +385,14 @@ When this option is enabled, the stash popup is available on \"Z\"."
        `((,states magit-mode-map "v" set-mark-command)
          (,states magit-mode-map "V" set-mark-command)
          (,states magit-mode-map ,(kbd "<escape>") evil-collection-magit-maybe-deactivate-mark)))
+
+     (when evil-collection-magit-use-$-for-end-of-line
+       `((,states magit-mode-map "$" evil-end-of-line)
+         (,states magit-mode-map "`" magit-process-buffer)))
+
+     (when evil-collection-magit-use-0-for-beginning-of-line
+       `((,states magit-mode-map "0" evil-beginning-of-line)
+         (,states magit-mode-map "~" magit-diff-default-context)))
 
      (when evil-collection-magit-use-z-for-folds
        `((,states magit-mode-map "Z"    magit-stash)
@@ -451,14 +475,17 @@ denotes the original magit key for this command.")
 ;; Need to refresh evil keymaps when blame mode is entered.
 (add-hook 'magit-blame-mode-hook 'evil-normalize-keymaps)
 
-(evil-set-initial-state 'magit-repolist-mode 'motion)
-(evil-collection-define-key 'motion 'magit-repolist-mode-map
+(evil-set-initial-state 'magit-repolist-mode 'normal)
+(evil-collection-define-key 'normal 'magit-repolist-mode-map
+  "m" 'magit-repolist-mark
+  "u" 'magit-repolist-unmark
+  "f" 'magit-repolist-fetch
   (kbd "RET") 'magit-repolist-status
   (kbd "gr")  'magit-list-repositories)
 (add-hook 'magit-repolist-mode-hook 'evil-normalize-keymaps)
 
-(evil-set-initial-state 'magit-submodule-list-mode 'motion)
-(evil-collection-define-key 'motion 'magit-submodule-list-mode-map
+(evil-set-initial-state 'magit-submodule-list-mode 'normal)
+(evil-collection-define-key 'normal 'magit-submodule-list-mode-map
   (kbd "RET") 'magit-repolist-status
   (kbd "gr")  'magit-list-submodules)
 (add-hook 'magit-submodule-list-mode-hook 'evil-normalize-keymaps)
@@ -577,11 +604,10 @@ evil-collection-magit affects.")
      (magit-dispatch "v" "-" magit-reverse)
      (magit-dispatch "k" "x" magit-discard)
      (magit-remote "k" "x" magit-remote-remove)
-     (magit-revert "v" "-" magit-revert-no-commit)
      ;; FIXME: how to properly handle a popup with a key that appears twice (in
-     ;; `define-transient-command' definition)? Currently we rely on:
+     ;; `transient-define-prefix' definition)? Currently we rely on:
      ;; 1. first call to `evil-collection-magit-change-popup-key' changes the first "V"
-     ;;    entry of `magit-revert' (the first entry in `define-transient-command'
+     ;;    entry of `magit-revert' (the first entry in `transient-define-prefix'
      ;;    definition of `magit-revert'), second call changes the second "V".
      ;; 2. the remapping here are in the same order as in `magit-revert'
      ;;    definition

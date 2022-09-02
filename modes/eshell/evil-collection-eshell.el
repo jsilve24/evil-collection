@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, eshell, tools
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -137,7 +137,12 @@ appropriate in some cases like terminals."
     "gk" 'eshell-previous-prompt
     "gj" 'eshell-next-prompt
     "0" 'eshell-bol
-    "^" 'eshell-bol))
+    "^" 'eshell-bol)
+
+  (evil-normalize-keymaps)
+  (unless evil-collection-always-run-setup-hook-after-load
+    (run-hook-with-args
+     'evil-collection-setup-hook 'eshell evil-collection-eshell-maps)))
 
 ;; TODO: Compare this setup procedure with evil-ediff.
 ;;;###autoload

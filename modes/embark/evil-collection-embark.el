@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -41,10 +41,15 @@
     ;; embark specific commands. `isearch-forward' isn't defined, use
     ;; `evil-search-forward' instead.
     "a" 'embark-act
-    "A" 'embark-collect-direct-action-minor-mode
+    "A" 'embark-act-all
     "E" 'embark-export                   ;; was e
+    "m" 'embark-collect-mark
     "T" 'embark-collect-zebra-minor-mode ;; was z
+    "t" 'embark-collect-toggle-marks
+    "u" 'embark-collect-unmark
+    "U" 'embark-collect-unmark-all
     (kbd "M-q") 'embark-collect-toggle-view
+    (kbd "M-a") 'embark-collect-direct-action-minor-mode
 
     "gr" 'revert-buffer))
 

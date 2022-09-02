@@ -8,7 +8,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.2
-;; Package-Requires: ((emacs "25.1") (evil "1.2.13") (annalist "1.0"))
+;; Package-Requires: ((emacs "26.3") (evil "1.2.13") (annalist "1.0"))
 ;; Keywords: evil, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -33,10 +33,19 @@
 ;; Some minibuffer-related packages such as Helm rely on this option.
 
 ;;; Code:
+
+;; `evil' requires `seq-into'?
+;; This require on `seq' before loading `evil 'prevents `evil' from erroring
+;; out with the below message on Emacs 29.
+;; Symbol's function definition is void: seq-into
+;; Looks like this error can be traced through evil ->
+;; Look at the commit that moved this line above `evil' to see the error message.
+;; evil -> evil-vars -> read-kbd-macro -> seq-into -> error.
+;; https://github.com/emacs-evil/evil/issues/1627
+(require 'seq)
 (require 'cl-lib)
 (require 'evil)
 (require 'annalist)
-(require 'seq)
 
 (defvar evil-collection-base-dir (file-name-directory load-file-name)
   "Store the directory evil-collection.el was loaded from.")
@@ -106,6 +115,32 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
   :type 'boolean
   :group 'evil-collection)
 
+(defvar evil-collection--modes-with-delayed-setup
+  `(emms
+    eshell)
+  "List of modes whose keybinds aren't completely set up after the mode is
+loaded. This can be a problem for cases where we're doing key translations
+using `evil-collection-setup-hook' which would result in an empty keymap.
+
+Normally we run `evil-collection-setup-hook' right away after the mode
+is loaded in `with-eval-after-load' (see `evil-collection-init') but for these
+modes, we skip running that hook and let the corresponding `evil-collection'
+package handle running `evil-collection-setup-hook'.
+
+Elements in this list either match a target mode symbol or the car of a list in
+`evil-collection--supported-modes'.
+
+If `evil-collection-always-run-setup-hook-after-load' is t, this list isn't
+read and `evil-collection-setup-hook' will be ran in the
+`with-eval-after-load' block in `evil-collection-init'.")
+
+(defcustom evil-collection-always-run-setup-hook-after-load nil
+  "Whether to always run `evil-collection-setup-hook' after mode is loaded.
+
+See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
+  :type 'boolean
+  :group 'evil-collection)
+
 (defvar evil-collection--supported-modes
   `(2048-game
     ag
@@ -113,8 +148,10 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     anaconda-mode
     apropos
     arc-mode
+    atomic-chrome
     auto-package-update
     beginend
+    bluetooth
     bm
     bookmark
     (buff-menu "buff-menu")
@@ -126,6 +163,7 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     company
     compile
     consult
+    corfu
     (custom cus-edit)
     cus-theme
     dashboard
@@ -144,17 +182,20 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     doc-view
     docker
     ebib
+    ebuku
     edbi
     edebug
     ediff
     eglot
     explain-pause-mode
+    eldoc
     elfeed
     elisp-mode
     elisp-refs
     elisp-slime-nav
     embark
     emms
+    ,@(when (>= emacs-major-version 29) '(emoji))
     epa
     ert
     eshell
@@ -200,11 +241,13 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     kotlin-mode
     macrostep
     man
-    magit
+    (magit magit-repos magit-submodule)
+    magit-section
     magit-todos
     markdown-mode
     ,@(when evil-collection-setup-minibuffer '(minibuffer))
     monky
+    mpc
     mpdel
     mu4e
     mu4e-conversation
@@ -212,10 +255,10 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     newsticker
     notmuch
     nov
-    (occur replace)
     omnisharp
     org
     org-present
+    org-roam
     osx-dictionary
     outline
     p4
@@ -233,6 +276,7 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     racket-describe
     realgud
     reftex
+    replace ;; For `occur'.
     restclient
     rg
     ripgrep
@@ -246,8 +290,11 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     sh-script
     ,@(when (>= emacs-major-version 28) '(shortdoc))
     simple
+    simple-mpc
     slime
     sly
+    snake
+    so-long
     speedbar
     ,@(when (>= emacs-major-version 27) '(tab-bar))
     tablist
@@ -271,6 +318,7 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     view
     vlf
     vterm
+    vundo
     w3m
     wdired
     wgrep
@@ -281,7 +329,7 @@ This will bind additional find-* type commands, e.g. usages, assignments, etc.."
     yaml-mode
     youtube-dl
     zmusic
-    (ztree ztree-diff))
+    (ztree ztree-diff ztree-dir))
   "List of modes supported by evil-collection. Elements are
 either target mode symbols or lists which `car' is the mode
 symbol and `cdr' the packages to register.")
@@ -302,6 +350,44 @@ mode symbol and `cdr' the packages to register.
 By default, `minibuffer' is not included because many users find
 this confusing. It will be included if
 `evil-collection-setup-minibuffer' is set to t."
+  :type '(repeat (choice symbol sexp))
+  :group 'evil-collection)
+
+(defcustom evil-collection-config
+  '((buff-menu :defer t)
+    (calc :defer t)
+    (comint :defer t)
+    (debug :defer t)
+    (diff-mode :defer t)
+    (dired :defer t)
+    (edebug :defer t)
+    (eldoc :defer t)
+    (help :defer t)
+    (image :defer t)
+    (indent :defer t)
+    (dired :defer t)
+    (info :defer t)
+    (replace :defer t)
+    (outline :defer t)
+    (package :defer t)
+    (package-menu :defer t)
+    (process-menu :defer t)
+    (simple :defer t)
+    (tab-bar :defer t)
+    (tabulated-list :defer t)
+    (xref :defer t))
+  "The list of modes with special configuration.
+
+These modes should match entries within `evil-collection-mode-list'.
+
+This variable is consumed only by `evil-collection-setup'.
+
+
+NOTE: The API of this variable may change drastically.
+
+Currently supported keys:
+
+:defer t or TIME in seconds to defer loading mode."
   :type '(repeat (choice symbol sexp))
   :group 'evil-collection)
 
@@ -357,7 +443,8 @@ This function takes care of checking the whitelist/blacklist against the full
 binding.
 
 For example:
-(evil-collection-define-operator-key 'yank 'pass-mode-map \"f\" 'pass-copy-field)
+(evil-collection-define-operator-key \='yank
+  \='pass-mode-map \"f\" \='pass-copy-field)
 
 This will check \"yf\" against a user's white/blacklist and also record the
 binding in `annalist' as so."
@@ -375,16 +462,16 @@ binding in `annalist' as so."
              (key-with-prefix (concat prefix key))
              (def (pop bindings))
              (def-with-menu-item
-              `(menu-item
-                ""
-                nil
-                :filter
-                (lambda (&optional _)
-                  (when (or
-                         (eq evil-this-operator (key-binding ,remap))
-                         (memq evil-this-operator ,operators))
-                    (setq evil-inhibit-operator t)
-                    ',def)))))
+               `(menu-item
+                 ""
+                 nil
+                 :filter
+                 (lambda (&optional _)
+                   (when (or
+                          (eq evil-this-operator (key-binding ,remap))
+                          (memq evil-this-operator ,operators))
+                     (setq evil-inhibit-operator t)
+                     ',def)))))
         (when (or (and whitelist (member key-with-prefix whitelist))
                   (not (member key-with-prefix blacklist)))
           (annalist-record 'evil-collection 'keybindings
@@ -439,6 +526,13 @@ to filter keys on the basis of `evil-collection-key-whitelist' and
             (push def filtered-bindings))))
       (setq filtered-bindings (nreverse filtered-bindings))
       (evil-collection--define-key states-to-bind map-sym filtered-bindings))))
+
+(defun evil-collection-can-bind-key (key)
+  "Return whether or not we should bind KEY."
+  (let* ((whitelist (mapcar 'kbd evil-collection-key-whitelist))
+         (blacklist (mapcar 'kbd evil-collection-key-blacklist)))
+    (or (and whitelist (member key whitelist))
+        (not (member key blacklist)))))
 
 (defun evil-collection--define-key (state map-sym bindings)
   "Workhorse function for `evil-collection-define-key'.
@@ -576,6 +670,81 @@ modes in the current buffer."
        nil "^[^.]")))))
   (find-file (evil-collection--mode-file mode "README.org")))
 
+;;;###autoload
+(cl-defun evil-collection-translate-minor-mode-key (states modes
+                                                           &rest translations
+                                                           &key destructive
+                                                           &allow-other-keys)
+  "Translate keys in the keymap(s) corresponding to STATES and MODES.
+
+Similar to `evil-collection-translate-key' but for minor modes.
+STATES should be the name of an evil state, a list of states, or nil. MODES
+should be a symbol corresponding to minor-mode to make the translations in or a
+list of minor-mode symbols. TRANSLATIONS corresponds to a list of
+key replacement pairs. For example, specifying \"a\" \"b\" will bind \"a\" to
+\"b\"'s definition in the keymap. Specifying nil as a replacement will unbind a
+key. If DESTRUCTIVE is nil, a backup of the keymap will be stored on the initial
+invocation, and future invocations will always look up keys in the backup
+keymap. When no TRANSLATIONS are given, this function will only create the
+backup keymap without making any translations. On the other hand, if DESTRUCTIVE
+is non-nil, the keymap will be destructively altered without creating a backup.
+For example, calling this function multiple times with \"a\" \"b\" \"b\" \"a\"
+would continue to swap and unswap the definitions of these keys. This means that
+when DESTRUCTIVE is non-nil, all related swaps/cycles should be done in the same
+invocation."
+  (declare (indent defun))
+  (unless (listp modes)
+    (setq modes (list modes)))
+  (unless (and (listp states)
+               (not (null states)))
+    (setq states (list states)))
+  (dolist (mode-symbol modes)
+    (let ((keymap-symbol (intern (format "%S-map" mode-symbol))))
+      (dolist (state states)
+        (evil-delay `(and (boundp ',keymap-symbol)
+                          (keymapp ,keymap-symbol))
+            `(evil-collection--translate-minor-mode-key
+              ',state
+              ',mode-symbol
+              ',translations
+              ,destructive)
+          'after-load-functions t nil
+          (symbol-name (cl-gensym (format "evil-collection-translate-key-in-%s"
+                                          keymap-symbol))))))))
+
+(defun evil-collection--translate-minor-mode-key (state
+                                                  mode-symbol
+                                                  translations
+                                                  destructive)
+  "Helper function for `evil-collection-translate-minor-mode-key'.
+In the minor mode keymap corresponding to STATE and MODE-SYMBOL, make the key
+TRANSLATIONS. When DESTRUCTIVE is non-nil, make the TRANSLATIONS destructively
+without creating/referencing a backup keymap."
+  (let* ((keymap-symbol (intern (format "%S-map" mode-symbol)))
+         (backup-keymap-symbol (intern (format "evil-collection-%s%s-backup-map"
+                                               mode-symbol
+                                               (if state
+                                                   (format "-%s-state" state)
+                                                 ""))))
+         (keymap (symbol-value keymap-symbol))
+         (lookup-keymap (if (and (not destructive)
+                                 (boundp backup-keymap-symbol))
+                            (symbol-value backup-keymap-symbol)
+                          (copy-keymap
+                           (if state
+                               (evil-get-minor-mode-keymap state mode-symbol)
+                             keymap))))
+         (maps (cl-loop for (key replacement) on translations by 'cddr
+                        ;; :destructive can be in TRANSLATIONS
+                        unless (keywordp key)
+                        collect key
+                        and collect (when replacement
+                                      (lookup-key lookup-keymap replacement)))))
+    (unless (or destructive
+                (boundp backup-keymap-symbol))
+      (set backup-keymap-symbol lookup-keymap))
+    (apply #'evil-define-minor-mode-key state mode-symbol maps)))
+
 (defun evil-collection--translate-key (state keymap-symbol
                                              translations
                                              destructive)
@@ -660,6 +829,21 @@ should consist of key swaps (e.g. \"a\" \"b\" is equivalent to \"a\" \"b\" \"b\"
   `(evil-collection-translate-key ,states ,keymaps ,@args))
 
 ;;;###autoload
+(defmacro evil-collection-swap-minor-mode-key (states modes &rest args)
+  "Wrapper around `evil-collection-translate-minor-mode-key' for swapping keys.
+STATES, MODES, and ARGS are passed to
+`evil-collection-translate-minor-mode-key'. ARGS should consist of key swaps
+(e.g. \"a\" \"b\" is equivalent to \"a\" \"b\" \"b\" \"a\"
+with `evil-collection-translate-minor-mode-key') and optionally keyword
+arguments for `evil-collection-translate-minor-mode-key'."
+  (declare (indent defun))
+  (setq args (cl-loop for (key replacement) on args by 'cddr
+                      collect key and collect replacement
+                      and unless (keywordp key)
+                      collect replacement and collect key))
+  `(evil-collection-translate-minor-mode-key ,states ,modes ,@args))
+
+;;;###autoload
 (defun evil-collection-require (mode &optional noerror)
   "Require the evil-collection-MODE file, but do not activate it.
 
@@ -682,7 +866,7 @@ forwarded to `require'."
 Alternatively, you may register select bindings manually, for
 instance:
 
-  (with-eval-after-load 'calendar
+  (with-eval-after-load \='calendar
     (evil-collection-calendar-setup))
 
 If MODES is specified (as either one mode or a list of modes), use those modes
@@ -699,6 +883,7 @@ instead of the modes in `evil-collection-mode-list'."
               reqs (cdr mode)))
       (dolist (req reqs)
         (with-eval-after-load req
+          ;; (message (format "Loaded %S..." req))
           (evil-collection-require m)
           (funcall (intern (concat "evil-collection-" (symbol-name m)
                                    "-setup")))
@@ -706,11 +891,63 @@ instead of the modes in `evil-collection-mode-list'."
                  (ignore-errors
                    (symbol-value
                     (intern (format "evil-collection-%s-maps" m))))))
-            (run-hook-with-args 'evil-collection-setup-hook
-                                m mode-keymaps))))))
+            (when (or evil-collection-always-run-setup-hook-after-load
+                      (not (memq m evil-collection--modes-with-delayed-setup)))
+              (run-hook-with-args 'evil-collection-setup-hook
+                                  m mode-keymaps)))))))
   (when evil-collection-want-unimpaired-p
     (evil-collection-require 'unimpaired)
     (evil-collection-unimpaired-setup)))
+
+(defun evil-collection-setup (&optional modes)
+  "Register the Evil bindings for all modes in `evil-collection-mode-list'.
+
+----------------------EXPERIMENTAL------------------------------------------
+
+This is a special wrapper over `evil-collection-init' that respects
+configuration from `evil-collection-config'. This function is experimental,
+so don't use if you don't want breakages or API changes.
+
+If MODES is specified (as either one mode or a list of modes), use those modes
+instead of the modes in `evil-collection-mode-list'.
+
+----------------------EXPERIMENTAL------------------------------------------"
+  (if modes
+      (or (listp modes) (setq modes (list modes)))
+    (setq modes evil-collection-mode-list))
+  (let ((configs evil-collection-config)
+        (deferred-modes)
+        (delays))
+    (dolist (config configs)
+      (let ((defer (plist-get (cdr config) :defer)))
+        (when defer
+          (push (car config) deferred-modes)
+          (push defer delays))))
+    (let ((filtered-modes
+           (cl-remove-if
+            (lambda (mode)
+              (let ((filterp nil)
+                    (modes (if (consp mode) mode (list mode))))
+                (dolist (m modes)
+                  (let ((x (memq m deferred-modes)))
+                    (when x
+                      (setf filterp t)
+                      ;; `evil-collection-config' format is slightly different
+                      ;; than `evil-collection-mode-list', so use the mode
+                      ;; entry from the mode list instead.
+                      (setf (car x) mode))))
+                filterp))
+            modes)))
+      (evil-collection-init filtered-modes))
+    (message (format "Deferring: %S" deferred-modes))
+    (dotimes (i (length deferred-modes))
+      (let ((mode (nth i deferred-modes))
+            (delay (nth i delays)))
+        ;; (message (format "Delaying %S..."
+        ;;                  (if (consp mode) (car mode) mode)))
+        (run-with-idle-timer
+         (if (numberp delay) delay 3) nil
+         (apply-partially 'evil-collection-init (list mode)))))))
 
 (defvar evil-collection-delete-operators '(evil-delete
                                            evil-cp-delete

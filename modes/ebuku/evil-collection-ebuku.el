@@ -1,12 +1,12 @@
 ;;; evil-collection-ebuku.el --- Evil bindings for Ebuku -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020-2021 Alexis
+;; Copyright (C) 2020-2022 Alexis
 
 ;; Author: Alexis <flexibeast@gmail.com>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, ebuku, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,8 @@
                               "t" 'ebuku-toggle-results-limit
                               (kbd "RET") 'ebuku-open-url
                               "C" 'ebuku-copy-url
+                              "T" 'ebuku-copy-title
+                              "I" 'ebuku-copy-index
                               [mouse-1] 'ebuku-open-url
                               [mouse-2] 'ebuku-open-url))
 

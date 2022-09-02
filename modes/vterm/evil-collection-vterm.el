@@ -8,7 +8,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, vterm, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,17 @@ also uses `evil-mode'."
                        "vterm"
                      "emacs"))))
 
+(declare-function vterm-cursor-in-command-buffer-p "vterm")
+(declare-function vterm-beginning-of-line "vterm")
+
+(evil-define-motion evil-collection-vterm-first-non-blank ()
+  "Move the cursor to the first non-blank character
+after the prompt."
+  :type exclusive
+  (if (vterm-cursor-in-command-buffer-p (point))
+      (vterm-beginning-of-line)
+    (evil-first-non-blank)))
+
 (defun evil-collection-vterm-insert ()
   "Insert character before cursor."
   (interactive)
@@ -82,7 +93,7 @@ also uses `evil-mode'."
 (defun evil-collection-vterm-append ()
   "Append character after cursor."
   (interactive)
-  (vterm-goto-char (1+ (point)))
+  (vterm-goto-char (point))
   (call-interactively #'evil-append))
 
 (defun evil-collection-vterm-append-line ()
@@ -91,8 +102,17 @@ also uses `evil-mode'."
   (vterm-goto-char (vterm--get-end-of-line))
   (call-interactively #'evil-append))
 
+(declare-function vterm-yank "vterm")
+
+(defun evil-collection-vterm-paste-after (&optional arg)
+  (interactive "P")
+  (vterm-goto-char (+ 1 (point)))
+  (call-interactively #'vterm-yank arg))
+
+(declare-function vterm-reset-cursor-point "vterm")
+
 (evil-define-operator evil-collection-vterm-delete (beg end type register yank-handler)
-  "Modification of evil-delete to work in vterm buffer. 
+  "Modification of evil-delete to work in vterm buffer.
 Delete text from BEG to END with TYPE.
 Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (interactive "<R><x><y>")
@@ -120,11 +140,17 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
     ;; place cursor on beginning of line
     (when (and (called-interactively-p 'any)
                (eq type 'line))
-      (evil-first-non-blank))))
+      (vterm-reset-cursor-point))))
 
 (evil-define-operator evil-collection-vterm-delete-backward-char (beg end type register)
   "Delete previous character."
   :motion evil-backward-char
+  (interactive "<R><x>")
+  (evil-collection-vterm-delete beg end type register))
+
+(evil-define-operator evil-collection-vterm-delete-char (beg end type register)
+  "Delete current character."
+  :motion evil-delete-char
   (interactive "<R><x>")
   (evil-collection-vterm-delete beg end type register))
 
@@ -176,6 +202,17 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (evil-collection-vterm-delete-line beg end type register yank-handler)
   (evil-collection-vterm-insert))
 
+(evil-define-operator evil-collection-vterm-substitute (beg end type register)
+  :motion evil-forward-char
+  (interactive "<R><x>")
+  (evil-collection-vterm-change beg end type register))
+
+(evil-define-operator evil-collection-vterm-substitute-line (beg end register yank-handler)
+  :motion evil-line-or-visual-line
+  :type line
+  (interactive "<r><x>")
+  (evil-collection-vterm-change beg end 'line register yank-handler))
+
 ;;;###autoload
 (defun evil-collection-vterm-setup ()
   "Set up `evil' bindings for `vterm'."
@@ -214,18 +251,23 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (evil-collection-define-key 'normal 'vterm-mode-map
     "[[" 'vterm-previous-prompt
     "]]" 'vterm-next-prompt
-    "p" 'vterm-yank
+    "p" 'evil-collection-vterm-paste-after
+    "P" 'vterm-yank
     "a" 'evil-collection-vterm-append
     "A" 'evil-collection-vterm-append-line
     "d" 'evil-collection-vterm-delete
     "D" 'evil-collection-vterm-delete-line
-    "x" 'evil-collection-vterm-delete-backward-char
+    "x" 'evil-collection-vterm-delete-char
+    "X" 'evil-collection-vterm-delete-backward-char
     (kbd "RET") 'vterm-send-return
+    "^" 'evil-collection-vterm-first-non-blank
     "i" 'evil-collection-vterm-insert
     "I" 'evil-collection-vterm-insert-line
     "u" 'vterm-undo
     "c" 'evil-collection-vterm-change
-    "C" 'evil-collection-vterm-change-line)
+    "C" 'evil-collection-vterm-change-line
+    "s" 'evil-collection-vterm-substitute
+    "S" 'evil-collection-vterm-substitute-line)
 
   (evil-collection-define-key 'visual 'vterm-mode-map
     "d" 'evil-collection-vterm-delete

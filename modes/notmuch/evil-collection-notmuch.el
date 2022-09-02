@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: emacs, tools, evil
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -189,7 +189,7 @@
     "K" 'notmuch-tag-jump
     (kbd "RET") 'notmuch-tree-show-message
     [mouse-1] 'notmuch-tree-show-message
-    "A" 'notmuch-tree-archive-thread
+    "A" 'notmuch-tree-archive-thread-then-next
     "a" 'notmuch-tree-archive-message-then-next
     "s" 'notmuch-tree-to-tree
     "gj" 'notmuch-tree-next-matching-message

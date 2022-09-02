@@ -6,7 +6,7 @@
 ;; Maintainer: James Nguyen <james@jojojames.com>, Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.6
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, emacs, tools, telegram, telega
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -99,7 +99,7 @@
 
     "^" 'telega-chatbuf-beginning-of-thing
 
-    "g?" 'telega-describe-chatbuf
+    "g?" 'telega-describe-chat
 
     "Za" 'telega-chatbuf-attach
     "Zf" 'telega-chatbuf-attach-media
@@ -179,7 +179,8 @@
     "P" 'telega-msg-pin-toggle
     "ZR" 'telega-msg-resend
     "S" 'telega-msg-save
-    "U" 'telega-chatbuf-unmark-all
+    "u" 'telega-msg-unmark
+    "U" 'telega-chatbuf-msg-marks-toggle
     "=" 'telega-msg-diff-edits
     "s" 'telega-msg-favorite-toggle)
 

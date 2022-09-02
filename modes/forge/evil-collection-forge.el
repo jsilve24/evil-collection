@@ -4,7 +4,7 @@
 
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
-;; Package-Requires: ((emacs "25.1") (evil "1.2.3"))
+;; Package-Requires: ((emacs "26.3") (evil "1.2.3"))
 ;; Homepage: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.4.1
 
@@ -44,9 +44,21 @@
   :group 'magit
   :type  'symbol)
 
+(defvar forge-add-default-bindings)
+
 ;;;###autoload
 (defun evil-collection-forge-setup ()
   "Set up `evil' bindings for `magit'."
+  ;; The latest release tag of forge doesn't include
+  ;; `forge-add-default-bindings' yet, it will throw an error:
+  ;;
+  ;;    void-variable `forge-add-default-bindings'
+  ;;
+  ;; for GNU Guix and MELPA stable users.
+  (when (bound-and-true-p forge-add-default-bindings)
+    (message "Setting `forge-add-default-bindings' to nil in `evil-collection-forge-setup'.
+To suppress this message you can set this variable to nil in your init.el file.")
+    (setq forge-add-default-bindings nil))
   (let ((states (if evil-collection-forge-use-y-for-yank
                     `(,evil-collection-forge-state visual)
                   `(,evil-collection-forge-state))))
@@ -82,9 +94,9 @@
   (transient-append-suffix 'magit-pull "n"
     '("N" "forge notifications" forge-pull-notifications))
   (transient-append-suffix 'magit-branch "w"
-    '("n" "pull-request" forge-checkout-pullreq))
+    '("f" "pull-request" forge-checkout-pullreq))
   (transient-append-suffix 'magit-branch "W"
-    '("N" "from pull-request" forge-branch-pullreq))
+    '("F" "from pull-request" forge-branch-pullreq))
   (transient-append-suffix 'magit-worktree "c"
     '("n" "pull-request worktree" forge-checkout-worktree))
   (transient-append-suffix 'magit-status-jump "w"

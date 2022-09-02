@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, info, tools
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -84,6 +84,8 @@
     "g9" 'Info-nth-menu-item
 
     ;; goto
+    "J" 'Info-menu
+
     "gG" 'Info-goto-node
     "gm" 'Info-menu
     "gt" 'Info-top-node
@@ -95,6 +97,8 @@
     (kbd "C-k") 'Info-backward-node
     "gj" 'Info-next
     "gk" 'Info-prev
+
+    "g," 'Info-index-next
 
     "g?" 'Info-summary)
 

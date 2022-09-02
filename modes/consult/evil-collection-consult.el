@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, consult, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -48,14 +48,18 @@
 (declare-function consult--remove-dups "consult")
 (declare-function consult--mark-candidates "consult")
 (declare-function consult-mark "consult")
+(declare-function consult-global-mark "consult")
 
 (defun evil-collection-consult-set-bindings ()
   "Set the bindings."
-  (evil-set-command-property 'consult-outline :jump t)
-  (evil-set-command-property 'consult-mark :jump t)
-  (evil-set-command-property 'consult-imenu :jump t)
-  (evil-set-command-property 'consult-org-heading :jump t)
-  (evil-set-command-property 'consult-line :jump t))
+  (dolist (cmd '(consult-outline
+                 consult-mark
+                 consult-global-mark
+                 consult-imenu
+                 consult-org-heading
+                 consult-line))
+    (evil-declare-not-repeat cmd)
+    (evil-set-command-property cmd :jump t)))
 
 (defun evil-collection-consult--evil-mark-ring ()
   "Return alist of char & marker for evil markers in current buffer."
@@ -76,14 +80,14 @@ as defined in `evil-collection-consult--evil-mark-ring'."
   (let* ((candidates)
          (current-buf (current-buffer)))
     (save-excursion
-      (dolist (marker (or markers (evil-collection-consult--evil-mark-ring)))
-        (let ((pos (marker-position (cdr marker)))
-              (buf (marker-buffer (cdr marker))))
+      (pcase-dolist (`(,char . ,marker) (or markers (evil-collection-consult--evil-mark-ring)))
+        (let ((pos (marker-position marker))
+              (buf (marker-buffer marker)))
           (when (and (eq buf current-buf)
                      (consult--in-range-p pos))
             (goto-char pos)
             (push (consult--location-candidate
-                   (format "%s: %s" (char-to-string (car marker)) (consult--line-with-cursor (cdr marker))) (cdr marker)
+                   (format "%s: %s" (char-to-string char) (consult--line-with-cursor marker)) marker
                    (line-number-at-pos pos consult-line-numbers-widen))
                   candidates)))))
     (nreverse (delete-dups candidates))))
@@ -92,13 +96,19 @@ as defined in `evil-collection-consult--evil-mark-ring'."
 (defun evil-collection-consult-mark ()
   "Jump to an evil marker in the current buffer."
   (interactive)
-  (unwind-protect
-      (progn
-        (advice-add #'consult--mark-candidates :override
-                    #'evil-collection-consult--mark-candidates)
-        (consult-mark (evil-collection-consult--evil-mark-ring)))
-    (advice-remove #'consult--mark-candidates
-                   #'evil-collection-consult--mark-candidates)))
+  (cl-letf (((symbol-function 'consult--mark-candidates)
+             #'evil-collection-consult--mark-candidates))
+    (consult-mark (evil-collection-consult--evil-mark-ring))))
+
+;;;###autoload
+(defun evil-collection-consult-jump-list ()
+  "Jump to a position in the evil jump list."
+  (interactive)
+  (consult-global-mark (delq nil (mapcar (lambda (jump)
+                                           (let ((mark (car jump)))
+                                             (when (markerp mark)
+                                               mark)))
+                                         (ring-elements (evil--jumps-get-window-jump-list))))))
 
 ;;;###autoload
 (defun evil-collection-consult-setup ()

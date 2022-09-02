@@ -6,7 +6,7 @@
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, emacs, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 ;;;###autoload
 (defun evil-collection-imenu-setup ()
   "Set up Evil integration for `imenu'."
+  (evil-declare-not-repeat 'imenu)
   (evil-add-command-properties 'imenu :jump t))
 
 (provide 'evil-collection-imenu)

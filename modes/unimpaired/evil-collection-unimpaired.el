@@ -7,7 +7,7 @@
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-evil/evil-collection
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; Keywords: evil, unimpaired, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,11 @@
   "Evil port of unimpaired for `evil-collection'."
   :group 'evil-collection)
 
+(defcustom evil-collection-unimpaired-want-repeat-mode-integration nil
+  "Whether or not to enable `repeat-mode' integration."
+  :type 'boolean
+  :group 'evil-collection)
+
 (defconst evil-collection-unimpaired-maps '(evil-collection-unimpaired-mode-map))
 
 (defvar evil-collection-unimpaired-mode-map (make-sparse-keymap)
@@ -56,39 +61,32 @@
   "Turn on `evil-collection-unimpaired-mode'."
   (evil-collection-unimpaired-mode 1))
 
-(defun evil-collection-unimpaired-next-error ()
+(evil-define-motion evil-collection-unimpaired-next-error (count)
   "Go to next error."
-  (interactive)
+  :jump t
+  (setq count (or count 1))
   (cond
    ((and (bound-and-true-p flycheck-mode)
          (fboundp 'flycheck-next-error))
-    (flycheck-next-error))
+    (flycheck-next-error count))
    ((and (bound-and-true-p flymake-mode)
          (fboundp 'flymake-goto-next-error))
-    (flymake-goto-next-error))
+    (flymake-goto-next-error count))
    (:default
     (message "No linting modes are on."))))
 
-(defun evil-collection-unimpaired-previous-error ()
+(evil-define-motion evil-collection-unimpaired-previous-error (count)
   "Go to previous error."
-  (interactive)
-  (cond
-   ((and (bound-and-true-p flycheck-mode)
-         (fboundp 'flycheck-previous-error))
-    (flycheck-previous-error))
-   ((and (bound-and-true-p flymake-mode)
-         (fboundp 'flymake-goto-prev-error))
-    (flymake-goto-prev-error))
-   (:default
-    (message "No linting modes are on."))))
+  :jump t
+  (evil-collection-unimpaired-next-error (- (or count 1))))
 
 (defun evil-collection-unimpaired--flycheck-count-errors ()
   "Count the number of flycheck errors."
   (length (delete-dups (mapcar 'flycheck-error-line flycheck-current-errors))))
 
-(defun evil-collection-unimpaired-first-error ()
+(evil-define-motion evil-collection-unimpaired-first-error ()
   "Go to the first error."
-  (interactive)
+  :jump t
   (cond
    ((and (bound-and-true-p flycheck-mode)
          (fboundp 'flycheck-first-error))
@@ -98,9 +96,9 @@
    (:default
     (message "No linting modes are on."))))
 
-(defun evil-collection-unimpaired-last-error ()
+(evil-define-motion evil-collection-unimpaired-last-error ()
   "Go to the last error."
-  (interactive)
+  :jump t
   (cond
    ((and (bound-and-true-p flycheck-mode)
          (fboundp 'flycheck-first-error))
@@ -113,19 +111,24 @@
 (defconst evil-collection-unimpaired--SCM-conflict-marker "^\\(@@@ .* @@@\\|[<=>]\\{7\\}\\)"
   "A regexp to match SCM conflict marker.")
 
-(defun evil-collection-unimpaired-previous-SCM-conflict-marker ()
+(evil-define-motion evil-collection-unimpaired-previous-SCM-conflict-marker (count)
   "Go to the previous SCM conflict marker or diff/patch hunk."
-  (interactive)
-  (search-backward-regexp evil-collection-unimpaired--SCM-conflict-marker nil t)
-  (move-beginning-of-line nil))
+  :jump t
+  (evil-collection-unimpaired-next-SCM-conflict-marker (- (or count 1))))
 
-(defun evil-collection-unimpaired-next-SCM-conflict-marker ()
+(evil-define-motion evil-collection-unimpaired-next-SCM-conflict-marker (count)
   "Go to the next SCM conflict marker or diff/patch hunk."
-  (interactive)
-  (forward-line 1)
-  (when (not (search-forward-regexp evil-collection-unimpaired--SCM-conflict-marker nil t))
-    (forward-line -1))
-  (move-beginning-of-line nil))
+  :jump t
+  (evil-motion-loop (dir (or count 1))
+    (cond
+     ((> dir 0)
+      (forward-line 1)
+      (when (not (search-forward-regexp evil-collection-unimpaired--SCM-conflict-marker nil t))
+        (forward-line -1))
+      (move-beginning-of-line nil))
+     (t
+      (search-backward-regexp evil-collection-unimpaired--SCM-conflict-marker nil t)
+      (move-beginning-of-line nil)))))
 
 (defun evil-collection-unimpaired-paste-above ()
   "Paste above current line with preserving indentation."
@@ -226,12 +229,45 @@
   (interactive "*p")
   (evil-collection-unimpaired--move-text (- arg)))
 
+;;; 'repeat-mode' integration. Emacs 28+
+(defmacro evil-collection-unimpaired-defvar-keymap (name &rest bindings)
+  "Define NAME a keymap with BINDINGS."
+  (declare (indent 1))
+  (cl-assert (cl-evenp (length bindings)))
+  `(progn
+     (defvar ,name
+       (let ((map (make-sparse-keymap)))
+         map))
+     (evil-collection-define-key nil ',name ,@bindings)))
+
+;; "[b" and "]b"
+(evil-collection-unimpaired-defvar-keymap evil-prev-buffer-repeat-map
+  "b" #'evil-prev-buffer
+  "B" #'evil-next-buffer)
+(evil-collection-unimpaired-defvar-keymap evil-next-buffer-repeat-map
+  "b" #'evil-next-buffer
+  "B" #'evil-prev-buffer)
+
+;; "[e" and "]e"
+(evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-move-text-up-repeat-map
+  "e" #'evil-collection-unimpaired-move-text-up
+  "E" #'evil-collection-unimpaired-move-text-down)
+(evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-move-text-down-repeat-map
+  "e" #'evil-collection-unimpaired-move-text-down
+  "E" #'evil-collection-unimpaired-move-text-up)
+
+;; "[q" and "]q"
+(evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-previous-error-repeat-map
+  "q" #'evil-collection-unimpaired-previous-error
+  "Q" #'evil-collection-unimpaired-next-error)
+(evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-next-error-repeat-map
+  "q" #'evil-collection-unimpaired-next-error
+  "Q" #'evil-collection-unimpaired-previous-error)
+
 ;;;###autoload
 (defun evil-collection-unimpaired-setup ()
   "Set up unimpaired-like bindings."
   (global-evil-collection-unimpaired-mode 1)
-  (evil-add-command-properties 'evil-collection-unimpaired-next-error :repeat nil)
-  (evil-add-command-properties 'evil-collection-unimpaired-previous-error :repeat nil)
   (evil-collection-define-key 'normal 'evil-collection-unimpaired-mode-map
     "[b" 'evil-prev-buffer
     "]b" 'evil-next-buffer
@@ -262,7 +298,16 @@
     "[u" 'evil-collection-unimpaired-url-encode
     "]u" 'evil-collection-unimpaired-url-decode
     "[6" 'evil-collection-unimpaired-b64-encode
-    "]6" 'evil-collection-unimpaired-b64-decode))
+    "]6" 'evil-collection-unimpaired-b64-decode)
+
+  (when evil-collection-unimpaired-want-repeat-mode-integration
+    (dolist (cmd '(evil-prev-buffer
+                   evil-next-buffer
+                   evil-collection-unimpaired-move-text-up
+                   evil-collection-unimpaired-move-text-down
+                   evil-collection-unimpaired-previous-error
+                   evil-collection-unimpaired-next-error))
+      (put cmd 'repeat-map (intern (format "%s-repeat-map" cmd))))))
 
 (provide 'evil-collection-unimpaired)
 ;;; evil-collection-unimpaired.el ends here

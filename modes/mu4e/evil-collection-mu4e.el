@@ -54,7 +54,7 @@
 ;; | Skip duplicates                 | zd        |             |
 ;; | Show log                        | gl        |             |
 ;; | Select other view               | gv        |             |
-;; | Save attachement(s)             | p         | P           |
+;; | Save attachement(s)             | p         |             |
 ;; | Save url                        | yu        |             |
 ;; | Go to url                       | gx        |             |
 ;; | Fetch url                       | gX        |             |
@@ -68,8 +68,30 @@
 (require 'evil-collection)
 (require 'mu4e nil t)
 
-(declare-function mu4e~main-action-str "mu4e-main")
-(declare-function mu4e~main-view-queue "mu4e-main")
+(declare-function mu4e--main-action-str "mu4e-main")
+(declare-function mu4e--main-view-queue "mu4e-main")
+(declare-function mu4e--longest-of-maildirs-and-bookmarks "mu4e-main")
+(declare-function mu4e--longest-of-maildirs-and-bookmarks "mu4e-main")
+(declare-function mu4e--maildirs-with-query "mu4e-folders")
+(defvar mu4e--server-props)
+(defvar mu4e-main-hide-fully-read)
+
+(defun evil-collection-mu4e--main-action-str (&rest args)
+  "Wrapper for `mu4e--main-action-str' to maintain compatibility
+with older release versions of `mu4e.'"
+  (apply (if (fboundp 'mu4e~main-action-str)
+             #'mu4e~main-action-str
+           #'mu4e--main-action-str)
+         args))
+
+(defun evil-collection-mu4e--main-view-queue (&rest args)
+  "Wrapper for `mu4e--main-view-queue' to maintain compatibility
+with older release versions of `mu4e.'"
+  (apply (if (fboundp 'mu4e~main-view-queue)
+             #'mu4e~main-view-queue
+           #'mu4e--main-view-queue)
+         args))
+
 (defvar smtpmail-send-queued-mail)
 (defvar smtpmail-queue-dir)
 
@@ -110,8 +132,8 @@
      "k" previous-line
      "u" mu4e-update-mail-and-index
      "gr" revert-buffer
-     "b" mu4e-headers-search-bookmark
-     "B" mu4e-headers-search-bookmark-edit
+     "b" mu4e-search-bookmark
+     "B" mu4e-search-bookmark-edit
      "N" mu4e-news
      ";" mu4e-context-switch
      "H" mu4e-display-manual
@@ -121,7 +143,7 @@
      "A" mu4e-about
      "f" smtpmail-send-queued-mail
      "m" mu4e~main-toggle-mail-sending-mode
-     "s" mu4e-headers-search
+     "s" mu4e-search
      "q" mu4e-quit)
 
     (mu4e-headers-mode-map
@@ -138,14 +160,14 @@
      "o" mu4e-headers-change-sorting
      "j" mu4e-headers-next
      "k" mu4e-headers-prev
-     "gr" mu4e-headers-rerun-search
-     "b" mu4e-headers-search-bookmark
-     "B" mu4e-headers-search-bookmark-edit
+     "gr" mu4e-search-rerun
+     "b" mu4e-search-bookmark
+     "B" mu4e-search-bookmark-edit
      ";" mu4e-context-switch
      ,(kbd "RET") mu4e-headers-view-message
-     "/" mu4e-headers-search-narrow
-     "s" mu4e-headers-search
-     "S" mu4e-headers-search-edit
+     "/" mu4e-search-narrow
+     "s" mu4e-search
+     "S" mu4e-search-edit
      "x" mu4e-mark-execute-all
      "a" mu4e-headers-action
      "*" mu4e-headers-mark-for-something ; TODO: Don't override evil-seach-word-forward?
@@ -203,7 +225,6 @@
      "cf" mu4e-compose-forward
      "cr" mu4e-compose-reply
      "p" mu4e-view-save-attachments
-     "P" mu4e-view-save-attachment-multi ; Since mu4e 1.0, -multi is same as normal.
      "O" mu4e-headers-change-sorting
      "A" mu4e-view-mime-part-action ; Since 1.6, uses gnus view by default
      "a" mu4e-view-action
@@ -243,7 +264,6 @@
            (mu4e-headers-mark-thread nil '(read)))
      ,@(when evil-want-C-u-scroll
          '("\C-u" evil-scroll-up))))
-  ;; TODO: Add mu4e-headers-search-bookmark?
   "All evil-mu4e bindings.")
 
 (defun evil-collection-mu4e-set-bindings ()
@@ -275,9 +295,9 @@
   "The place where to end overriding Basic section.")
 
 (defvar evil-collection-mu4e-new-region-basic
-  (concat (mu4e~main-action-str "\t* [J]ump to some maildir\n" 'mu4e-jump-to-maildir)
-          (mu4e~main-action-str "\t* enter a [s]earch query\n" 'mu4e-search)
-          (mu4e~main-action-str "\t* [C]ompose a new message\n" 'mu4e-compose-new))
+  (concat (evil-collection-mu4e--main-action-str "\t* [J]ump to some maildir\n" 'mu4e-jump-to-maildir)
+          (evil-collection-mu4e--main-action-str "\t* enter a [s]earch query\n" 'mu4e-search)
+          (evil-collection-mu4e--main-action-str "\t* [C]ompose a new message\n" 'mu4e-compose-new))
   "Define the evil-mu4e Basic region.")
 
 (defvar evil-collection-mu4e-begin-region-misc "\n  Misc"
@@ -289,20 +309,67 @@
 (defun evil-collection-mu4e-new-region-misc ()
   "Define the evil-mu4e Misc region."
   (concat
-   (mu4e~main-action-str "\t* [;]Switch focus\n" 'mu4e-context-switch)
-   (mu4e~main-action-str "\t* [u]pdate email & database (Alternatively: gr)\n"
-                         'mu4e-update-mail-and-index)
+   (evil-collection-mu4e--main-action-str "\t* [;]Switch focus\n" 'mu4e-context-switch)
+   (evil-collection-mu4e--main-action-str "\t* [u]pdate email & database\n"
+                                          'mu4e-update-mail-and-index)
 
    ;; show the queue functions if `smtpmail-queue-dir' is defined
    (if (file-directory-p smtpmail-queue-dir)
-       (mu4e~main-view-queue)
+       (evil-collection-mu4e--main-view-queue)
      "")
    "\n"
 
-   (mu4e~main-action-str "\t* [N]ews\n" 'mu4e-news)
-   (mu4e~main-action-str "\t* [A]bout mu4e\n" 'mu4e-about)
-   (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
-   (mu4e~main-action-str "\t* [q]uit\n" 'mu4e-quit)))
+   (evil-collection-mu4e--main-action-str "\t* [N]ews\n" 'mu4e-news)
+   (evil-collection-mu4e--main-action-str "\t* [A]bout mu4e\n" 'mu4e-about)
+   (evil-collection-mu4e--main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
+   (evil-collection-mu4e--main-action-str "\t* [q]uit\n" 'mu4e-quit)))
+
+(defvar evil-collection-mu4e-begin-region-maildir "\n  Maildirs"
+  "The place where to end overriding Maildirs section.")
+
+(defvar evil-collection-mu4e-end-region-maildir "\n\n  Misc"
+  "The place where to end overriding Maildirs section.")
+
+(defun evil-collection-mu4e-new-region-maildir ()
+  "Define the evil-mu4e Maildirs region."
+  (concat
+   ;; minorly edited version of mu4e--main-bookmarks mu4e-main.el
+   (cl-loop with mds = (mu4e--maildirs-with-query)
+            with longest = (mu4e--longest-of-maildirs-and-bookmarks)
+            with queries = (plist-get mu4e--server-props :queries)
+            for m in mds
+            for key = (string (plist-get m :key))
+            for name = (plist-get m :name)
+            for query = (plist-get m :query)
+            for qcounts = (and (stringp query)
+                               (cl-loop for q in queries
+                                        when (string=
+                                              (decode-coding-string
+                                               (plist-get q :query)
+                                               'utf-8 t)
+                                              query)
+                                        collect q))
+            for unread = (and qcounts (plist-get (car qcounts) :unread))
+            when (not (plist-get m :hide))
+            when (not (and mu4e-main-hide-fully-read (eq unread 0)))
+            concat (concat
+                    ;; menu entry
+                    (evil-collection-mu4e--main-action-str
+                     (concat "\t* [J" key "] " name)
+                     (concat "J" key))
+                    ;; append all/unread numbers, if available.
+                    (if qcounts
+                        (let ((unread (plist-get (car qcounts) :unread))
+                              (count (plist-get (car qcounts) :count)))
+                          (format
+                           "%s (%s/%s)"
+                           (make-string (- longest (string-width name)) ? )
+                           (propertize (number-to-string unread)
+                                       'face 'mu4e-header-key-face)
+                           count))
+                      "")
+                    "\n"))
+(propertize "\n  Misc" 'face 'mu4e-title-face)))
 
 (defun evil-collection-mu4e-replace-region (new-region start end)
   "Replace region between START and END with NEW-REGION.
@@ -320,14 +387,17 @@ START end END end are regular expressions."
     (delete-region start-point end-point)))
 
 (defun evil-collection-mu4e-update-main-view ()
-  "Update 'Basic' and 'Misc' regions to reflect the new
-keybindings."
+  "Update 'Basic', 'Maildir', and 'Misc' regions to reflect
+the new keybindings."
   (evil-collection-mu4e-replace-region evil-collection-mu4e-new-region-basic
                                        evil-collection-mu4e-begin-region-basic
                                        evil-collection-mu4e-end-region-basic)
   (evil-collection-mu4e-replace-region (evil-collection-mu4e-new-region-misc)
                                        evil-collection-mu4e-begin-region-misc
-                                       evil-collection-mu4e-end-region-misc))
+                                       evil-collection-mu4e-end-region-misc)
+  (evil-collection-mu4e-replace-region (evil-collection-mu4e-new-region-maildir)
+                                       evil-collection-mu4e-begin-region-maildir
+                                       evil-collection-mu4e-end-region-maildir))
 
 
 ;;; Initialize evil-collection-mu4e
