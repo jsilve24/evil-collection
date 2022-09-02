@@ -126,8 +126,8 @@
     "gm" 'calendar-lunar-phases ; "gm" in evil-org-agenda. TODO: Shadows calendar-mayan.
     "gs" 'calendar-sunrise-sunset ; "gs" in evil-org-agenda
     "gh" 'calendar-list-holidays ; "gh" in evil-org-agenda. TODO: Shadows calendar-hebrew.
-    "gc" 'org-calendar-goto-agenda ; "gc" in evil-org-agenda. TODO: Shadows calendar-iso.
-    "a" 'calendar-list-holidays
+    "a" 'org-calendar-goto-agenda ; "gc" in evil-org-agenda. TODO: Shadows calendar-iso.
+    ;; "a" 'calendar-list-holidays
     "r" 'calendar-cursor-holidays
 
     ;; refresh
