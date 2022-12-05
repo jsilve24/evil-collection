@@ -242,28 +242,20 @@
 
 ;; "[b" and "]b"
 (evil-collection-unimpaired-defvar-keymap evil-prev-buffer-repeat-map
-  "b" #'evil-prev-buffer
-  "B" #'evil-next-buffer)
+					  "b" #'evil-prev-buffer)
 (evil-collection-unimpaired-defvar-keymap evil-next-buffer-repeat-map
-  "b" #'evil-next-buffer
-  "B" #'evil-prev-buffer)
+					  "b" #'evil-next-buffer)
 
 ;; "[e" and "]e"
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-move-text-up-repeat-map
-  "e" #'evil-collection-unimpaired-move-text-up
-  "E" #'evil-collection-unimpaired-move-text-down)
+					  "e" #'evil-collection-unimpaired-move-text-up)
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-move-text-down-repeat-map
-  "e" #'evil-collection-unimpaired-move-text-down
-  "E" #'evil-collection-unimpaired-move-text-up)
-
-;; "[q" and "]q"
+					  "e" #'evil-collection-unimpaired-move-text-down)
+;; "[m" and "]m"
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-previous-error-repeat-map
-  "q" #'evil-collection-unimpaired-previous-error
-  "Q" #'evil-collection-unimpaired-next-error)
+					  "m" #'evil-collection-unimpaired-previous-error)
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-next-error-repeat-map
-  "q" #'evil-collection-unimpaired-next-error
-  "Q" #'evil-collection-unimpaired-previous-error)
-
+					  "m" #'evil-collection-unimpaired-next-error)
 ;;;###autoload
 (defun evil-collection-unimpaired-setup ()
   "Set up unimpaired-like bindings."
@@ -273,32 +265,34 @@
     "]b" 'evil-next-buffer
     "[e" 'evil-collection-unimpaired-move-text-up
     "]e" 'evil-collection-unimpaired-move-text-down
-    "[l" 'evil-collection-unimpaired-previous-error
-    "]l" 'evil-collection-unimpaired-next-error
-    "[L" 'evil-collection-unimpaired-first-error
-    "]L" 'evil-collection-unimpaired-last-error
-    "[q" 'evil-collection-unimpaired-previous-error
-    "]q" 'evil-collection-unimpaired-next-error
-    "[Q" 'evil-collection-unimpaired-first-error
-    "]Q" 'evil-collection-unimpaired-last-error
-    "[n" 'evil-collection-unimpaired-previous-SCM-conflict-marker
-    "]n" 'evil-collection-unimpaired-next-SCM-conflict-marker
+    "[m" 'evil-collection-unimpaired-previous-error
+    "]m" 'evil-collection-unimpaired-next-error
+    "[M" 'evil-collection-unimpaired-first-error
+    "]M" 'evil-collection-unimpaired-last-error
+    ;; "[q" 'evil-collection-unimpaired-previous-error
+    ;; "]q" 'evil-collection-unimpaired-next-error
+    ;; "[Q" 'evil-collection-unimpaired-first-error
+    ;; "]Q" 'evil-collection-unimpaired-last-error
+    ;; "[n" 'evil-collection-unimpaired-previous-SCM-conflict-marker
+    ;; "]n" 'evil-collection-unimpaired-next-SCM-conflict-marker
     "[p" 'evil-collection-unimpaired-paste-above
     "]p" 'evil-collection-unimpaired-paste-below
-    "[P" 'evil-collection-unimpaired-paste-above
-    "]P" 'evil-collection-unimpaired-paste-below
-    (kbd "[ SPC") 'evil-collection-unimpaired-insert-newline-above
-    (kbd "] SPC") 'evil-collection-unimpaired-insert-newline-below)
+    ;; "[P" 'evil-collection-unimpaired-paste-above
+    ;; "]P" 'evil-collection-unimpaired-paste-below
+    ;; (kbd "[ SPC") 'evil-collection-unimpaired-insert-newline-above
+    ;; (kbd "] SPC") 'evil-collection-unimpaired-insert-newline-below
+    )
   (evil-collection-define-key 'visual 'evil-collection-unimpaired-mode-map
     "[e" 'evil-collection-unimpaired-move-text-up
     "]e" 'evil-collection-unimpaired-move-text-down
-    "[n" 'evil-collection-unimpaired-previous-SCM-conflict-marker
-    "]n" 'evil-collection-unimpaired-next-SCM-conflict-marker)
-  (evil-collection-define-key 'motion 'evil-collection-unimpaired-mode-map
-    "[u" 'evil-collection-unimpaired-url-encode
-    "]u" 'evil-collection-unimpaired-url-decode
-    "[6" 'evil-collection-unimpaired-b64-encode
-    "]6" 'evil-collection-unimpaired-b64-decode)
+    ;; "[n" 'evil-collection-unimpaired-previous-SCM-conflict-marker
+    ;; "]n" 'evil-collection-unimpaired-next-SCM-conflict-marker
+    )
+  ;; (evil-collection-define-key 'motion 'evil-collection-unimpaired-mode-map
+  ;;   "[u" 'evil-collection-unimpaired-url-encode
+  ;;   "]u" 'evil-collection-unimpaired-url-decode
+  ;;   "[6" 'evil-collection-unimpaired-b64-encode
+  ;;   "]6" 'evil-collection-unimpaired-b64-decode)
 
   (when evil-collection-unimpaired-want-repeat-mode-integration
     (dolist (cmd '(evil-prev-buffer
