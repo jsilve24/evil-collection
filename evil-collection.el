@@ -164,6 +164,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     compile
     consult
     corfu
+    crdt
     (custom cus-edit)
     cus-theme
     dashboard
@@ -211,6 +212,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     geiser
     ggtags
     git-timemachine
+    gited
     gnus
     go-mode
     grep
