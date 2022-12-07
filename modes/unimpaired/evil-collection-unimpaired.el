@@ -253,9 +253,9 @@
 					  "e" #'evil-collection-unimpaired-move-text-down)
 ;; "[m" and "]m"
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-previous-error-repeat-map
-					  "m" #'evil-collection-unimpaired-previous-error)
+					  "q" #'evil-collection-unimpaired-previous-error)
 (evil-collection-unimpaired-defvar-keymap evil-collection-unimpaired-next-error-repeat-map
-					  "m" #'evil-collection-unimpaired-next-error)
+					  "q" #'evil-collection-unimpaired-next-error)
 ;;;###autoload
 (defun evil-collection-unimpaired-setup ()
   "Set up unimpaired-like bindings."
@@ -265,14 +265,10 @@
     "]b" 'evil-next-buffer
     "[e" 'evil-collection-unimpaired-move-text-up
     "]e" 'evil-collection-unimpaired-move-text-down
-    "[m" 'evil-collection-unimpaired-previous-error
-    "]m" 'evil-collection-unimpaired-next-error
-    "[M" 'evil-collection-unimpaired-first-error
-    "]M" 'evil-collection-unimpaired-last-error
-    ;; "[q" 'evil-collection-unimpaired-previous-error
-    ;; "]q" 'evil-collection-unimpaired-next-error
-    ;; "[Q" 'evil-collection-unimpaired-first-error
-    ;; "]Q" 'evil-collection-unimpaired-last-error
+    "[q" 'evil-collection-unimpaired-previous-error
+    "]q" 'evil-collection-unimpaired-next-error
+    "[Q" 'evil-collection-unimpaired-first-error
+    "]Q" 'evil-collection-unimpaired-last-error
     ;; "[n" 'evil-collection-unimpaired-previous-SCM-conflict-marker
     ;; "]n" 'evil-collection-unimpaired-next-SCM-conflict-marker
     "[p" 'evil-collection-unimpaired-paste-above
