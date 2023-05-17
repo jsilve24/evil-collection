@@ -40,11 +40,17 @@
 
 (defvar vterm--process)
 
+(defcustom evil-collection-vterm-move-cursor-back nil
+  "Whether the cursor is moved backwards when exiting insert state."
+  :type 'boolean
+  :group 'vterm)
+
 (defun evil-collection-vterm-escape-stay ()
   "Go back to normal state but don't move cursor backwards.
 Moving cursor backwards is the default vim behavior but
 it is not appropriate in some cases like terminals."
-  (setq-local evil-move-cursor-back nil))
+  (setq-local evil-move-cursor-back
+              evil-collection-vterm-move-cursor-back))
 
 (defvar-local evil-collection-vterm-send-escape-to-vterm-p nil
   "Track whether or not we send ESC to `vterm' or `emacs'.")
@@ -150,7 +156,7 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
 
 (evil-define-operator evil-collection-vterm-delete-char (beg end type register)
   "Delete current character."
-  :motion evil-delete-char
+  :motion evil-forward-char
   (interactive "<R><x>")
   (evil-collection-vterm-delete beg end type register))
 
@@ -213,6 +219,16 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (interactive "<r><x>")
   (evil-collection-vterm-change beg end 'line register yank-handler))
 
+(evil-define-motion evil-collection-vterm-next-line (count)
+  "Move the cursor COUNT lines down.
+But don't allow the cursor to move bellow the last prompt line."
+  :type line
+  ;; This successfully prevents the `j' button from moving to an empty line
+  ;; bellow the last prompt. However, it still can be bugged for example by
+  ;; going to the one line above the last prompt and doing `10j'.
+  (when (> (count-words (point) (point-max)) 0)
+    (evil-next-line count)))
+
 ;;;###autoload
 (defun evil-collection-vterm-setup ()
   "Set up `evil' bindings for `vterm'."
@@ -267,7 +283,9 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
     "c" 'evil-collection-vterm-change
     "C" 'evil-collection-vterm-change-line
     "s" 'evil-collection-vterm-substitute
-    "S" 'evil-collection-vterm-substitute-line)
+    "S" 'evil-collection-vterm-substitute-line
+    "j" 'evil-collection-vterm-next-line
+    "G" 'vterm-reset-cursor-point)
 
   (evil-collection-define-key 'visual 'vterm-mode-map
     "d" 'evil-collection-vterm-delete

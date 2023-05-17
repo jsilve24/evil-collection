@@ -159,6 +159,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     calendar
     cider
     cmake-mode
+    color-rg
     comint
     company
     compile
@@ -188,6 +189,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     edebug
     ediff
     eglot
+    elpaca
     explain-pause-mode
     eldoc
     elfeed
@@ -236,6 +238,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     js2-mode
     leetcode
     lispy
+    lms
     log-edit
     log-view
     lsp-ui-imenu
@@ -741,7 +744,7 @@ without creating/referencing a backup keymap."
                         unless (keywordp key)
                         collect key
                         and collect (when replacement
-                                      (lookup-key lookup-keymap replacement)))))
+                                      (evil-lookup-key lookup-keymap replacement)))))
     (unless (or destructive
                 (boundp backup-keymap-symbol))
       (set backup-keymap-symbol lookup-keymap))
@@ -772,7 +775,7 @@ without creating/referencing a backup keymap."
                         unless (keywordp key)
                         collect key
                         and collect (when replacement
-                                      (lookup-key lookup-keymap replacement)))))
+                                      (evil-lookup-key lookup-keymap replacement)))))
     (unless (or destructive
                 (boundp backup-keymap-symbol))
       (set backup-keymap-symbol lookup-keymap))
