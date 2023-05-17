@@ -185,14 +185,6 @@
        "gv" mu4e-select-other-view
        "T"  evil-collection-mu4e-mark-thread-as-read)
 
-    (mu4e-headers-mode-map
-     "q" mu4e~headers-quit-buffer
-     "J" mu4e~headers-jump-to-maildir
-     "C" mu4e-compose-new
-     "E" mu4e-compose-edit
-     "F" mu4e-compose-forward
-     "R" mu4e-compose-reply
-     "cc" mu4e-compose-new
       (mu4e-compose-mode-map
        "gg" mu4e-compose-goto-top
        "G" mu4e-compose-goto-bottom
