@@ -70,16 +70,20 @@ ex. \(cider-debug-mode-send-reply \":next\"\)"
                (interactive)
                (cider-debug-mode-send-reply ,(format ":%s" command))))))))
 
-(evil-collection-cider-make-debug-command "next"
-                                          "continue"
-                                          "out"
-                                          "quit"
-                                          "eval"
-                                          "inject"
-                                          "inspect"
-                                          "locals"
+(evil-collection-cider-make-debug-command "continue"
+                                          "continue-all"
+                                          "next"
                                           "in"
-                                          "stacktrace")
+                                          "out"
+                                          "force-out"
+                                          "eval"
+                                          "inspect"
+                                          "inspect-prompt"
+                                          "locals"
+                                          "inject"
+                                          "stacktrace"
+                                          "trace"
+                                          "quit")
 
 ;;;###autoload
 (defun evil-collection-cider-setup ()
@@ -100,17 +104,21 @@ ex. \(cider-debug-mode-send-reply \":next\"\)"
 
     (evil-collection-define-key 'normal 'cider--debug-mode-map
       "b" 'cider-debug-defun-at-point
-      "n" 'evil-collection-cider-debug-next
       "c" 'evil-collection-cider-debug-continue
-      "o" 'evil-collection-cider-debug-out
-      "q" 'evil-collection-cider-debug-quit
-      "e" 'evil-collection-cider-debug-eval
-      "J" 'evil-collection-cider-debug-inject
+      "C" 'evil-collection-cider-debug-continue-all
+      "n" 'evil-collection-cider-debug-next
       "I" 'evil-collection-cider-debug-in
+      "o" 'evil-collection-cider-debug-out
+      "O" 'evil-collection-cider-debug-force-out
+      "H" 'cider-debug-move-here
+      "e" 'evil-collection-cider-debug-eval
       "p" 'evil-collection-cider-debug-inspect
-      "s" 'evil-collection-cider-debug-stacktrace
+      "P" 'evil-collection-cider-debug-inspect-prompt
       "L" 'evil-collection-cider-debug-locals
-      "H" 'cider-debug-move-here))
+      "J" 'evil-collection-cider-debug-inject
+      "s" 'evil-collection-cider-debug-stacktrace
+      "t" 'evil-collection-cider-debug-trace
+      "q" 'evil-collection-cider-debug-quit))
 
   (evil-collection-define-key '(normal visual) 'cider-mode-map
     "gd" 'cider-find-var

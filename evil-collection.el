@@ -1,6 +1,6 @@
 ;;; evil-collection.el --- A set of keybindings for Evil mode -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 James Nguyen
+;; Copyright (C) 2017, 2023 James Nguyen
 
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Pierre Neidhardt <mail@ambrevar.xyz>
@@ -155,6 +155,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     bm
     bookmark
     (buff-menu "buff-menu")
+    bufler
     calc
     calendar
     cider
@@ -227,7 +228,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     hg-histedit
     hungry-delete
     ibuffer
-    image
+    (image image-mode)
     image-dired
     image+
     imenu
@@ -437,10 +438,10 @@ functions added to this hook should include a \"&rest _rest\" for forward
 compatibility.")
 
 (defun evil-collection-define-operator-key (operator map-sym &rest bindings)
-  "Defines a key on a specific operator e.g. yank or delete.
+  "Define a key on a specific OPERATOR e.g. yank or delete.
 
 This function is useful for adding specific binds to operator maps
-(e.g. `evil-yank' or `evil-delete') without erasing the original bind.
+\(e.g. `evil-yank' or `evil-delete') without erasing the original bind.
 
 For example, say one wants to bind \"yf\" to something but also wants to keep
 \"yy\".
@@ -449,7 +450,7 @@ This function takes care of checking the whitelist/blacklist against the full
 binding.
 
 For example:
-(evil-collection-define-operator-key \='yank
+\(evil-collection-define-operator-key \='yank
   \='pass-mode-map \"f\" \='pass-copy-field)
 
 This will check \"yf\" against a user's white/blacklist and also record the
@@ -498,8 +499,8 @@ binding in `annalist' as so."
 (defun evil-collection--filter-states (state)
   "Return a list states after filtering STATE (a single symbol or list of symbols).
 The return value adheres to `evil-collection-state-passlist' and
-`evil-collection-state-denylist'. When the STATE is `nil', which
-means all states for `evil-define-key', return `nil'."
+`evil-collection-state-denylist'. When the STATE is nil, which
+means all states for `evil-define-key', return nil."
   (let ((states (if (listp state) state (list state))))
     (seq-difference
      (if evil-collection-state-passlist
@@ -676,6 +677,16 @@ modes in the current buffer."
        nil "^[^.]")))))
   (find-file (evil-collection--mode-file mode "README.org")))
 
+(defun evil-collection--delay (condition form hook &optional append local name)
+  "Execute FORM when CONDITION becomes true, checking with HOOK.
+NAME specifies the name of the entry added to HOOK.  If APPEND is
+non-nil, the entry is appended to the hook.  If LOCAL is non-nil,
+the buffer-local value of HOOK is modified.
+
+This is a backport of `evil-delay' without the deprecation notice to deal with CI until migration can be done.
+Ref: https://github.com/emacs-evil/evil-collection/issues/750"
+  (eval `(evil-with-delay ,condition (,hook ,append ,local ,name) ,form) t))
+
 ;;;###autoload
 (cl-defun evil-collection-translate-minor-mode-key (states modes
                                                            &rest translations
@@ -707,16 +718,22 @@ invocation."
   (dolist (mode-symbol modes)
     (let ((keymap-symbol (intern (format "%S-map" mode-symbol))))
       (dolist (state states)
-        (evil-delay `(and (boundp ',keymap-symbol)
-                          (keymapp ,keymap-symbol))
-            `(evil-collection--translate-minor-mode-key
-              ',state
-              ',mode-symbol
-              ',translations
-              ,destructive)
-          'after-load-functions t nil
-          (symbol-name (cl-gensym (format "evil-collection-translate-key-in-%s"
-                                          keymap-symbol))))))))
+        (let ((hook-name
+               (symbol-name
+                (cl-gensym
+                 (format "evil-collection-translate-key-in-%s" keymap-symbol)))))
+          (evil-collection--delay `(and (boundp ',keymap-symbol)
+                                       (keymapp ,keymap-symbol))
+              `(evil-collection--translate-minor-mode-key
+                 ',state
+                 ',mode-symbol
+                 ',translations
+                 ,destructive)
+              'after-load-functions
+              t
+              nil
+              hook-name))))))
+
 
 (defun evil-collection--translate-minor-mode-key (state
                                                   mode-symbol
@@ -812,13 +829,22 @@ invocation."
     (setq states (list states)))
   (dolist (keymap-symbol keymaps)
     (dolist (state states)
-      (evil-delay `(and (boundp ',keymap-symbol)
-                        (keymapp ,keymap-symbol))
-          `(evil-collection--translate-key ',state ',keymap-symbol
-                                           ',translations ,destructive)
-        'after-load-functions t nil
-        (symbol-name (cl-gensym (format "evil-collection-translate-key-in-%s"
-                                        keymap-symbol)))))))
+      (let ((hook-name
+             (symbol-name
+              (cl-gensym
+               (format "evil-collection-translate-key-in-%s" keymap-symbol)))))
+        (evil-collection--delay `(and (boundp ',keymap-symbol)
+                                      (keymapp ,keymap-symbol))
+            `(evil-collection--translate-key
+               ',state
+               ',keymap-symbol
+               ',translations
+               ,destructive)
+            'after-load-functions
+             t
+             nil
+             hook-name)))))
+
 
 ;;;###autoload
 (defmacro evil-collection-swap-key (states keymaps &rest args)
@@ -839,7 +865,7 @@ should consist of key swaps (e.g. \"a\" \"b\" is equivalent to \"a\" \"b\" \"b\"
   "Wrapper around `evil-collection-translate-minor-mode-key' for swapping keys.
 STATES, MODES, and ARGS are passed to
 `evil-collection-translate-minor-mode-key'. ARGS should consist of key swaps
-(e.g. \"a\" \"b\" is equivalent to \"a\" \"b\" \"b\" \"a\"
+\(e.g. \"a\" \"b\" is equivalent to \"a\" \"b\" \"b\" \"a\"
 with `evil-collection-translate-minor-mode-key') and optionally keyword
 arguments for `evil-collection-translate-minor-mode-key'."
   (declare (indent defun))
