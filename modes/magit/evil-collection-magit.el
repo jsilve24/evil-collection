@@ -50,7 +50,6 @@
 (defvar magit-process-mode-map)
 (defvar magit-reflog-mode-map)
 (defvar magit-refs-mode-map)
-(defvar magit-repolist-mode-map)
 (defvar magit-status-mode-map)
 (defvar magit-submodule-list-mode-map)
 
@@ -62,7 +61,6 @@
     magit-blame-read-only-mode-map
     magit-blob-mode-map
     magit-submodule-list-mode-map ; -> parent: `magit-repolist-mode-map'
-    magit-repolist-mode-map
     magit-mode-map))
 
 (defcustom evil-collection-magit-use-y-for-yank t
@@ -200,7 +198,8 @@ Move `magit-diff-default-context' to \"~\"."
     (evil-set-initial-state mode evil-default-state)))
 
 (defun evil-collection-magit-revert-initial-states ()
-  "Revert the initial state for modes to their values before evil-collection-magit was loaded."
+  "Revert the initial state for modes to their values before
+evil-collection-magit was loaded."
   (dolist (mode (append evil-collection-magit-emacs-to-evil-collection-magit-state-modes
                         evil-collection-magit-emacs-to-default-state-modes))
     (evil-set-initial-state mode 'emacs))
@@ -475,15 +474,6 @@ denotes the original magit key for this command.")
 ;; Need to refresh evil keymaps when blame mode is entered.
 (add-hook 'magit-blame-mode-hook 'evil-normalize-keymaps)
 
-(evil-set-initial-state 'magit-repolist-mode 'normal)
-(evil-collection-define-key 'normal 'magit-repolist-mode-map
-  "m" 'magit-repolist-mark
-  "u" 'magit-repolist-unmark
-  "f" 'magit-repolist-fetch
-  (kbd "RET") 'magit-repolist-status
-  (kbd "gr")  'magit-list-repositories)
-(add-hook 'magit-repolist-mode-hook 'evil-normalize-keymaps)
-
 (evil-set-initial-state 'magit-submodule-list-mode 'normal)
 (evil-collection-define-key 'normal 'magit-submodule-list-mode-map
   (kbd "RET") 'magit-repolist-status
@@ -505,8 +495,8 @@ denotes the original magit key for this command.")
          ("x"    git-rebase-exec           "exec = run command (the rest of the line) using shell")
          ("d"    git-rebase-kill-line      "drop = remove commit" "k")
          ("u"    git-rebase-undo           "undo last change")
-         (nil    with-editor-finish        "tell Git to make it happen")
-         (nil    with-editor-cancel        "tell Git that you changed your mind, i.e. abort")
+         ("ZZ"   with-editor-finish        "tell Git to make it happen")
+         ("ZQ"   with-editor-cancel        "tell Git that you changed your mind, i.e. abort")
          ("k"    evil-previous-line        "move point to previous line" "p")
          ("j"    evil-next-line            "move point to next line" "n")
          ("M-k"  git-rebase-move-line-up   "move the commit at point up" "\M-p")
@@ -593,7 +583,7 @@ evil-collection-magit affects.")
      '((magit-dispatch "Z" "%" magit-worktree)
        (magit-dispatch "z" "Z" magit-stash)))
    (when evil-collection-magit-want-horizontal-movement
-     '((magit-dispatch "L" "\C-l" magit-log-refresh)
+     '((magit-dispatch "L" "C-l" magit-log-refresh)
        (magit-dispatch "l" "L" magit-log)))
    '((magit-branch "x" "X" magit-branch-reset)
      (magit-branch "k" "x" magit-branch-delete)
@@ -635,9 +625,9 @@ evil-collection-magit affects.")
 ;;;###autoload
 (defun evil-collection-magit-init ()
   "This function completes the setup of evil-collection-magit. It is called
-automatically when evil-collection-magit-setup is called.. The only reason to use
-this function is if you've called `evil-collection-magit-revert' and wish to
-go back to evil-collection-magit behavior."
+automatically when evil-collection-magit-setup is called.. The only reason to
+use this function is if you've called `evil-collection-magit-revert' and wish
+to go back to evil-collection-magit behavior."
   (interactive)
   (evil-collection-magit-adjust-section-bindings)
   (evil-collection-magit-adjust-popups)
@@ -664,8 +654,10 @@ using `evil-collection-magit-toggle-text-mode'"
   )
 (evil-collection-define-key evil-collection-magit-state 'magit-mode-map
   "\C-t" 'evil-collection-magit-toggle-text-mode
-  ;; "\\"   'evil-collection-magit-toggle-text-mode
-  )
+  "\\"   'evil-collection-magit-toggle-text-mode)
+(evil-collection-define-key evil-collection-magit-state 'git-rebase-mode-map
+  "\C-t" 'evil-collection-magit-toggle-text-mode
+  "\\"   'evil-collection-magit-toggle-text-mode)
 
 (defvar evil-collection-magit-last-mode nil
   "Used to store last magit mode before entering text mode using
@@ -674,10 +666,11 @@ using `evil-collection-magit-toggle-text-mode'"
 (defun evil-collection-magit-toggle-text-mode ()
   "Switch to `text-mode' and back from magit buffers."
   (interactive)
-  (cond ((derived-mode-p 'magit-mode)
+  (cond ((derived-mode-p 'magit-mode 'git-rebase-mode)
          (setq evil-collection-magit-last-mode major-mode)
          (message "Switching to text-mode")
          (text-mode)
+         (read-only-mode -1)
          (evil-collection-magit-toggle-text-minor-mode 1)
          (evil-normalize-keymaps))
         ((and (eq major-mode 'text-mode)

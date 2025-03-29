@@ -159,6 +159,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     calc
     calendar
     cider
+    citre
     cmake-mode
     color-rg
     comint
@@ -167,8 +168,10 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     consult
     corfu
     crdt
+    (csv "csv-mode")
     (custom cus-edit)
     cus-theme
+    dape
     dashboard
     daemons
     deadgrep
@@ -184,6 +187,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     distel
     doc-view
     docker
+    eat
     ebib
     ebuku
     edbi
@@ -219,6 +223,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     gited
     gnus
     go-mode
+    gptel
     grep
     guix
     hackernews
@@ -227,6 +232,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     helpful
     hg-histedit
     hungry-delete
+    hyrolo
     ibuffer
     (image image-mode)
     image-dired
@@ -238,6 +244,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     info
     ivy
     js2-mode
+    ,@(when (>= emacs-major-version 30) '(kmacro))
     leetcode
     lispy
     lms
@@ -248,14 +255,17 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     kotlin-mode
     macrostep
     man
-    (magit magit-repos magit-submodule)
+    (magit magit-submodule) ;; See https://github.com/emacs-evil/evil-collection/issues/637
+    magit-repos
     magit-section
     magit-todos
     markdown-mode
+    minesweeper
     ,@(when evil-collection-setup-minibuffer '(minibuffer))
     monky
     mpc
     mpdel
+    mpdired
     mu4e
     mu4e-conversation
     neotree
@@ -277,6 +287,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     (process-menu simple)
     prodigy
     profiler
+    p-search
     python
     quickrun
     racer
@@ -300,6 +311,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     simple-mpc
     slime
     sly
+    smerge-mode
     snake
     so-long
     speedbar
@@ -317,6 +329,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     trashed
     tuareg
     typescript-mode
+    ultra-scroll
     vc-annotate
     vc-dir
     vc-git
@@ -330,6 +343,7 @@ See `evil-collection-init' and `evil-collection--modes-with-delayed-setup'."
     wdired
     wgrep
     which-key
+    with-editor
     woman
     xref
     xwidget
@@ -683,7 +697,8 @@ NAME specifies the name of the entry added to HOOK.  If APPEND is
 non-nil, the entry is appended to the hook.  If LOCAL is non-nil,
 the buffer-local value of HOOK is modified.
 
-This is a backport of `evil-delay' without the deprecation notice to deal with CI until migration can be done.
+This is a backport of `evil-delay' without the deprecation notice to deal with
+CI until migration can be done.
 Ref: https://github.com/emacs-evil/evil-collection/issues/750"
   (eval `(evil-with-delay ,condition (,hook ,append ,local ,name) ,form) t))
 
