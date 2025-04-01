@@ -159,7 +159,8 @@ end of the buffer."
        "m" mu4e--main-toggle-mail-sending-mode
        "s" mu4e-search
        "q" mu4e-quit
-       "c" mu4e-search-query)
+       ;; "c" mu4e-search-query
+       )
 
       (mu4e-headers-mode-map
        "q" mu4e~headers-quit-buffer
@@ -217,7 +218,8 @@ end of the buffer."
        ;; "gl" mu4e-show-log
        "gv" mu4e-select-other-view
        "T"  evil-collection-mu4e-mark-thread-as-read
-       "c" mu4e-search-query)
+       ;; "c" mu4e-search-query
+       )
 
       (mu4e-compose-mode-map
        "gg" mu4e-compose-goto-top
